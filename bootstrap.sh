@@ -228,8 +228,8 @@ build_zls_from_source() {
   git clone https://github.com/zigtools/zls.git "$zls_dir"
   cd "$zls_dir"
 
-  if git rev-parse "v$zig_version" >/dev/null 2>&1; then
-    git checkout "v$zig_version"
+  if git rev-parse "$zig_version" >/dev/null 2>&1; then
+    git checkout "$zig_version"
   else
     log_error "No ZLS tag found for Zig v$zig_version. Staying on default branch."
   fi
