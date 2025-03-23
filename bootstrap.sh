@@ -243,6 +243,94 @@ build_zls_from_source() {
   cd "$repo_dir"
 }
 
+install_zigup() {
+  local bin_dir="$HOME/local/bin"
+  local zigup_url="https://github.com/marler8997/zigup/releases/latest/download/zigup-x86_64-linux.tar.gz"
+  local temp_dir
+  temp_dir=$(mktemp -d)
+
+  if command -v zigup &>/dev/null; then
+    log_success "zigup already installed"
+    return
+  fi
+
+  log_info "Installing zigup..."
+
+  curl -fsSL "$zigup_url" | tar -xz -C "$temp_dir"
+
+  if [ ! -f "$temp_dir/zigup" ]; then
+    log_error "zigup binary not found after extraction"
+    return 1
+  fi
+
+  mv "$temp_dir/zigup" "$bin_dir/"
+  chmod +x "$bin_dir/zigup"
+
+  rm -rf "$temp_dir"
+
+  log_success "zigup installed to $bin_dir"
+}
+
+build_ghostty_from_source() {
+  local install_prefix="$HOME/.local"
+  local bin_dir="$install_prefix/bin"
+  local repo_dir="$HOME/local/repo"
+  local ghostty_dir="$repo_dir/ghostty"
+
+  if command -v ghostty &>/dev/null; then
+    log_success "ghostty already installed"
+    return
+  fi
+
+  # Detect current Zig version
+  local zig_version
+  zig_version=$(zig version)
+  if [[ ! "$zig_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+    log_error "Could not detect valid Zig version (got: $zig_version)"
+    return 1
+  fi
+
+  # Detect distro and install dependencies
+  log_info "Installing system dependencies for Ghostty..."
+
+  if [ -f /etc/os-release ]; then
+    . /etc/os-release
+    case "$ID" in
+      ubuntu|debian)
+        sudo apt update
+        sudo apt install -y libgtk-4-dev libadwaita-1-dev git blueprint-compiler gettext
+        ;;
+      fedora)
+        sudo dnf install -y gtk4-devel zig libadwaita-devel blueprint-compiler gettext
+        ;;
+      *)
+        log_error "Unsupported distro: $ID. Install GTK4, libadwaita, blueprint-compiler, gettext manually."
+        return 1
+        ;;
+    esac
+  else
+    log_error "/etc/os-release not found. Cannot detect distro."
+    return 1
+  fi
+
+  # Clone Ghostty
+  log_info "Cloning Ghostty and checking out branch $zig_version"
+  mkdir -p "$repo_dir"
+  git clone https://github.com/ghostty-org/ghostty "$ghostty_dir"
+  cd "$ghostty_dir"
+
+  if git rev-parse "$zig_version" >/dev/null 2>&1; then
+    git checkout "$zig_version"
+  else
+    log_error "No branch found for Zig version $zig_version in Ghostty. Staying on default branch."
+  fi
+
+  zig build -Doptimize=ReleaseFast -p "$install_prefix"
+
+  log_success "Ghostty built and installed to $bin_dir"
+}
+
+
 
 # curl -fsSL https://raw.githubusercontent.com/pierrelgol/bootstrap/main/bootstrap.sh | bash
 
@@ -269,6 +357,9 @@ main() {
   run_step "Build helix from source" build_helix_from_source
 
   run_step "Build ZLS from source" build_zls_from_source
+  run_step "Install zigup" install_zigup
+  run_step "Build Ghostty from source" build_ghostty_from_source
+
 
   log_info "System ready."
 }
