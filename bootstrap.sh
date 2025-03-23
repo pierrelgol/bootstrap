@@ -1,6 +1,45 @@
 #!/bin/bash
 set -euo pipefail
 
+install_system_packages() {
+  log_info "Installing system development packages..."
+
+  if [ ! -f /etc/os-release ]; then
+    log_error "/etc/os-release not found. Cannot detect distro."
+    return 1
+  fi
+
+  . /etc/os-release
+
+  case "$ID" in
+    ubuntu|debian)
+      sudo apt update
+      sudo apt install -y \
+        git curl wget openssh-client vim build-essential \
+        clang lldb lld llvm-dev libclang-dev \
+        pkg-config cmake make gcc g++ \
+        unzip tar xz-utils zstd \
+        libssl-dev libz-dev libbz2-dev liblzma-dev \
+        ca-certificates gnupg software-properties-common
+      ;;
+    fedora)
+      sudo dnf install -y \
+        git curl wget openssh vim \
+        clang lldb lld llvm-devel clang-devel \
+        pkgconf cmake make gcc gcc-c++ \
+        unzip tar xz zstd \
+        openssl-devel zlib-devel bzip2-devel xz-devel \
+        ca-certificates gnupg2
+      ;;
+    *)
+      log_error "Unsupported distro: $ID. Install development tools manually."
+      return 1
+      ;;
+  esac
+
+  log_success "System packages installed"
+}
+
 
 INTERACTIVE_MODE=true
 run_step() {
@@ -337,6 +376,7 @@ build_ghostty_from_source() {
 main() {
   log_info "Starting bootstrap..."
 
+  run_step "Install system packages (requires sudo)" install_system_packages
   run_step "Setup directories" bootstrap_setup_directories
   run_step "Install Commit Mono font" bootstrap_install_font_commit_mono
   run_step "Install Webi" bootstrap_install_webi
