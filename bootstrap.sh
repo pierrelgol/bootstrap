@@ -185,7 +185,12 @@ build_helix_from_source() {
 
   cargo install --path helix-term --locked
 
-  local cargo_bin="$(cargo bin hx || echo "$HOME/.cargo/bin/hx")"
+  local cargo_bin="$HOME/.cargo/bin/hx"
+
+  if [ ! -f "$cargo_bin" ]; then
+    log_error "helix binary not found at $cargo_bin"
+    return 1
+  fi
 
   cp "$cargo_bin" "$bin_dir/hx"
 
@@ -198,6 +203,8 @@ build_helix_from_source() {
   export HELIX_RUNTIME="$bin_dir/helix/runtime"
 }
 
+
+# curl -fsSL https://raw.githubusercontent.com/pierrelgol/bootstrap/main/bootstrap.sh | bash
 
 main() {
   log_info "Starting bootstrap..."
