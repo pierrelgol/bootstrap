@@ -150,6 +150,7 @@ build_yazi_from_source() {
   local bin_dir="$HOME/local/bin"
   local yazi_dir="$repo_dir/yazi"
 
+  cd "$repo_dir"
   if command -v yazi &>/dev/null; then
     log_success "yazi already installed"
     return
@@ -173,6 +174,7 @@ build_helix_from_source() {
   local bin_dir="$HOME/local/bin"
   local helix_dir="$repo_dir/helix"
 
+  cd "$repo_dir"
   if command -v hx &>/dev/null; then
     log_success "helix (hx) already installed"
     return
@@ -210,6 +212,7 @@ build_zls_from_source() {
   local bin_dir="$HOME/local/bin"
   local zls_dir="$repo_dir/zls"
 
+  cd "$repo_dir"
   if command -v zls &>/dev/null; then
     log_success "zls already installed"
     return
@@ -222,7 +225,7 @@ build_zls_from_source() {
     return 1
   fi
 
-  log_info "Cloning ZLS and checking out tag v$zig_version"
+  log_info "Cloning ZLS and checking out tag $zig_version"
 
   mkdir -p "$repo_dir"
   git clone https://github.com/zigtools/zls.git "$zls_dir"
@@ -231,7 +234,7 @@ build_zls_from_source() {
   if git rev-parse "$zig_version" >/dev/null 2>&1; then
     git checkout "$zig_version"
   else
-    log_error "No ZLS tag found for Zig v$zig_version. Staying on default branch."
+    log_error "No ZLS tag found for Zig $zig_version. Staying on default branch."
   fi
 
   zig build -Doptimize=ReleaseSafe -p "$HOME/local"
