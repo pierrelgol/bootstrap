@@ -98,6 +98,60 @@ cargo_install() {
   fi
 }
 
+build_yazi_from_source() {
+  local repo_dir="$HOME/local/repo"
+  local bin_dir="$HOME/local/bin"
+  local yazi_dir="$repo_dir/yazi"
+
+  if command -v yazi &>/dev/null; then
+    log_success "yazi already installed"
+    return
+  fi
+
+  log_info "Cloning and building yazi from source..."
+
+  mkdir -p "$repo_dir"
+  git clone https://github.com/sxyazi/yazi.git "$yazi_dir"
+  cd "$yazi_dir"
+  cargo build --release --locked
+
+  cp target/release/yazi "$bin_dir/"
+  cp target/release/ya "$bin_dir/"
+  cd "$repo_dir"
+  log_success "yazi and ya installed to $bin_dir"
+}
+
+build_helix_from_source() {
+  local repo_dir="$HOME/local/repo"
+  local bin_dir="$HOME/local/bin"
+  local helix_dir="$repo_dir/helix"
+
+  if command -v hx &>/dev/null; then
+    log_success "helix (hx) already installed"
+    return
+  fi
+
+  log_info "Cloning and building helix from source..."
+
+  git clone https://github.com/helix-editor/helix "$helix_dir"
+  cd "$helix_dir"
+
+  cargo install --path helix-term --locked
+
+  local cargo_bin="$(cargo bin hx || echo "$HOME/.cargo/bin/hx")"
+
+  cp "$cargo_bin" "$bin_dir/hx"
+
+  mkdir -p "$bin_dir/helix"
+  cp -r runtime "$bin_dir/helix/runtime"
+
+  log_success "helix installed to $bin_dir/hx"
+  log_info "HELIX_RUNTIME should point to $bin_dir/helix/runtime"
+
+  export HELIX_RUNTIME="$bin_dir/helix/runtime"
+}
+
+
 main() {
   log_info "Starting bootstrap..."
   bootstrap_setup_directories
@@ -107,12 +161,13 @@ main() {
   bootstrap_source_envman_persistent
   webi_install ziglang
   webi_install rust
-  webi_install yazi
   cargo_install bat
   cargo_install eza
   cargo_install zoxide
   cargo_install atuin
   cargo_install ripgrep
+
+  build_yazi_from_source
   log_info "System ready."
 }
 
