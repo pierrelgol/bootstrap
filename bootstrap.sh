@@ -100,6 +100,17 @@ webi_install() {
   fi
 }
 
+source_rust_env() {
+  local rust_env="$HOME/.cargo/env"
+  if [ -f "$rust_env" ]; then
+    . "$rust_env"
+    log_success "Sourced Rust environment from .cargo/env"
+  else
+    log_error "Rust environment file not found at $rust_env"
+    exit 1
+  fi
+}
+
 cargo_install() {
   local tool="$1"
   if command -v "$tool" &>/dev/null; then
@@ -174,6 +185,7 @@ main() {
   bootstrap_source_envman_persistent
   webi_install ziglang
   webi_install rust
+  source_rust_env
   cargo_install bat
   cargo_install eza
   cargo_install zoxide
