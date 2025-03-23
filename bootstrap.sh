@@ -46,12 +46,35 @@ ensure_envman_persistent() {
   fi
 }
 
+install_zig() {
+  if command -v zig &>/dev/null; then
+    log_success "Zig is already installed"
+  else
+    log_info "Installing Zig via Webi..."
+    webi ziglang
+    log_success "Zig installed"
+  fi
+}
+
+install_rust() {
+  if command -v rustc &>/dev/null; then
+    log_success "Rust is already installed"
+  else
+    log_info "Installing Rust via Webi..."
+    webi rust
+    log_success "Rust installed"
+  fi
+}
+
+
 main() {
   log_info "Starting bootstrap..."
   ensure_webi_installed
   ensure_envman_sourced
   ensure_envman_persistent
-  log_info "Webi is ready. Try running \`webi ziglang\` or \`webi rust\` next."
+  install_zig
+  install_rust
+  log_info "System ready."
 }
 
 main
