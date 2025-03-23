@@ -23,23 +23,36 @@ bootstrap_setup_directories() {
 }
 
 bootstrap_install_font_commit_mono() {
-  FONT_DIR="$HOME/.local/share/fonts"
-  FONT_NAME="CommitMono"
-  FONT_URL="https://github.com/arrowtype/commit-mono/releases/download/v1.1/CommitMono-1.1.zip"
+  local font_dir="$HOME/.local/share/fonts"
+  local temp_dir
+  temp_dir=$(mktemp -d)
+  local font_url_base="https://raw.githubusercontent.com/pierrelgol/bootstrap/main/CommitMono"
 
-  if fc-list | grep -qi "CommitMono"; then
-    log_success "Commit Mono already installed"
+  # Check if already installed
+  if fc-list | grep -qi "CommitMonoNerdFontMono"; then
+    log_success "Commit Mono Nerd Font already installed"
     return
   fi
 
-  log_info "Installing Commit Mono font..."
-  TEMP_DIR=$(mktemp -d)
-  curl -L "$FONT_URL" -o "$TEMP_DIR/commitmono.zip"
-  unzip -qq "$TEMP_DIR/commitmono.zip" -d "$TEMP_DIR"
-  cp "$TEMP_DIR"/fonts/otf/*.otf "$FONT_DIR"
-  fc-cache -f "$FONT_DIR"
-  rm -rf "$TEMP_DIR"
-  log_success "Commit Mono installed"
+  log_info "Installing Commit Mono Nerd Font from bootstrap repo..."
+
+  mkdir -p "$font_dir"
+
+  # Download each font file individually
+  for font_file in \
+    CommitMonoNerdFontMono-Regular.otf \
+    CommitMonoNerdFontMono-Bold.otf \
+    CommitMonoNerdFontMono-Italic.otf \
+    CommitMonoNerdFontMono-BoldItalic.otf
+  do
+    curl -fsSL "$font_url_base/$font_file" -o "$temp_dir/$font_file"
+    cp "$temp_dir/$font_file" "$font_dir/"
+  done
+
+  fc-cache -f "$font_dir"
+  rm -rf "$temp_dir"
+
+  log_success "Commit Mono Nerd Font installed"
 }
 
 bootstrap_install_webi() {
