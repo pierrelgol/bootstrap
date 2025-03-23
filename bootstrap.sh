@@ -191,8 +191,8 @@ main() {
   cargo_install zoxide
   cargo_install atuin
   cargo_install ripgrep
-
   build_yazi_from_source
+  build_helix_from_source
   log_info "System ready."
 }
 
