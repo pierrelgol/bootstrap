@@ -40,7 +40,6 @@ install_system_packages() {
   log_success "System packages installed"
 }
 
-
 INTERACTIVE_MODE=true
 run_step() {
   local step_name="$1"
@@ -52,7 +51,7 @@ run_step() {
   fi
 
   while true; do
-    echo -e "\n\033[1;36m==>\033[0m Run step '\033[1m$step_name\033[0m'? [Y/n/s] "
+    echo -e "\n\033[1;36m==>\033[0m Run step '\033[1m$step_name\033[0m'? [Y]es / [n]o / [s]kip all prompts: "
     read -r choice
     case "$choice" in
       [Yy]|"") $step_func && break ;;
@@ -68,39 +67,57 @@ log_info() {
 }
 
 log_success() {
-  echo -e "\033[1;32m✔\033[0m $1"
+  echo -e "\033[1;32m\u2714\033[0m $1"
 }
 
 log_error() {
-  echo -e "\033[1;31m✗\033[0m $1"
+  echo -e "\033[1;31m\u2717\033[0m $1"
 }
 
-bootstrap_setup_directories() {
+setup_directories() {
   log_info "Setting up directory structure..."
-  mkdir -p "$HOME/local/bin"
-  mkdir -p "$HOME/local/repo"
-  mkdir -p "$HOME/workspace"
-  mkdir -p "$HOME/.local/share/fonts"
+  mkdir -p "$HOME/local/bin" "$HOME/local/repo" "$HOME/workspace" "$HOME/.local/share/fonts"
   log_success "Directories created"
 }
 
-bootstrap_install_font_commit_mono() {
+setup_path_env() {
+  local bashrc="$HOME/.bashrc"
+  local paths=(
+    "$HOME/local/bin"
+    "$HOME/.local/bin"
+    "$HOME/.cargo/bin"
+  )
+
+  for dir in "${paths[@]}"; do
+    if [[ ":$PATH:" != *":$dir:"* ]]; then
+      export PATH="$dir:$PATH"
+    fi
+
+    if ! grep -Fxq "export PATH=\"$dir:\$PATH\"" "$bashrc"; then
+      echo "export PATH=\"$dir:\$PATH\"" >> "$bashrc"
+      log_info "Added $dir to PATH in .bashrc"
+    else
+      log_success "$dir already in PATH in .bashrc"
+    fi
+  done
+
+  log_success "Updated PATH with all local binary directories"
+}
+
+install_font_commit_mono() {
   local font_dir="$HOME/.local/share/fonts"
   local temp_dir
   temp_dir=$(mktemp -d)
   local font_url_base="https://raw.githubusercontent.com/pierrelgol/bootstrap/main/CommitMono"
 
-  # Check if already installed
   if fc-list | grep -qi "CommitMonoNerdFontMono"; then
     log_success "Commit Mono Nerd Font already installed"
     return
   fi
 
   log_info "Installing Commit Mono Nerd Font from bootstrap repo..."
-
   mkdir -p "$font_dir"
 
-  # Download each font file individually
   for font_file in \
     CommitMonoNerdFontMono-Regular.otf \
     CommitMonoNerdFontMono-Bold.otf \
@@ -117,7 +134,7 @@ bootstrap_install_font_commit_mono() {
   log_success "Commit Mono Nerd Font installed"
 }
 
-bootstrap_install_webi() {
+install_webi() {
   if [ ! -f "$HOME/.local/bin/webi" ]; then
     log_info "Installing Webi..."
     curl -sS https://webi.sh/webi | sh
@@ -126,9 +143,8 @@ bootstrap_install_webi() {
   fi
 }
 
-bootstrap_source_envman() {
+setup_envman_current() {
   local env_file="$HOME/.config/envman/PATH.env"
-
   if [ -f "$env_file" ]; then
     source "$env_file"
     log_success "Sourced PATH.env in current shell"
@@ -138,10 +154,9 @@ bootstrap_source_envman() {
   fi
 }
 
-bootstrap_source_envman_persistent() {
+setup_envman_persistent() {
   local env_file="$HOME/.config/envman/PATH.env"
   local bashrc="$HOME/.bashrc"
-
   if ! grep -q "$env_file" "$bashrc"; then
     echo -e "\n[ -f \"$env_file\" ] && source \"$env_file\"" >> "$bashrc"
     log_info "Added PATH.env sourcing to .bashrc"
@@ -152,7 +167,6 @@ bootstrap_source_envman_persistent() {
 
 webi_install() {
   local tool="$1"
-
   if command -v "$tool" &>/dev/null; then
     log_success "$tool already installed"
   else
@@ -234,7 +248,6 @@ build_helix_from_source() {
   fi
 
   cp "$cargo_bin" "$bin_dir/hx"
-
   mkdir -p "$bin_dir/helix"
   cp -r runtime "$bin_dir/helix/runtime"
 
@@ -244,7 +257,6 @@ build_helix_from_source() {
   export HELIX_RUNTIME="$bin_dir/helix/runtime"
   cd "$repo_dir"
 }
-
 
 build_zls_from_source() {
   local repo_dir="$HOME/local/repo"
@@ -304,7 +316,6 @@ install_zigup() {
 
   mv "$temp_dir/zigup" "$bin_dir/"
   chmod +x "$bin_dir/zigup"
-
   rm -rf "$temp_dir"
 
   log_success "zigup installed to $bin_dir"
@@ -321,7 +332,6 @@ build_ghostty_from_source() {
     return
   fi
 
-  # Detect current Zig version
   local zig_version
   zig_version=$(zig version)
   if [[ ! "$zig_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
@@ -329,7 +339,6 @@ build_ghostty_from_source() {
     return 1
   fi
 
-  # Detect distro and install dependencies
   log_info "Installing system dependencies for Ghostty..."
 
   if [ -f /etc/os-release ]; then
@@ -352,7 +361,6 @@ build_ghostty_from_source() {
     return 1
   fi
 
-  # Clone Ghostty
   log_info "Cloning Ghostty and checking out branch $zig_version"
   mkdir -p "$repo_dir"
   git clone https://github.com/ghostty-org/ghostty "$ghostty_dir"
@@ -365,23 +373,29 @@ build_ghostty_from_source() {
   fi
 
   zig build -Doptimize=ReleaseFast -p "$install_prefix"
-
   log_success "Ghostty built and installed to $bin_dir"
 }
 
-
-
-# curl -fsSL https://raw.githubusercontent.com/pierrelgol/bootstrap/main/bootstrap.sh | bash
+install_chezmoi_dotfiles() {
+  if command -v chezmoi &>/dev/null; then
+    log_success "chezmoi already installed"
+  else
+    log_info "Installing and applying chezmoi..."
+    sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply pierrelgol
+    log_success "chezmoi installed and dotfiles applied"
+  fi
+}
 
 main() {
   log_info "Starting bootstrap..."
 
   run_step "Install system packages (requires sudo)" install_system_packages
-  run_step "Setup directories" bootstrap_setup_directories
-  run_step "Install Commit Mono font" bootstrap_install_font_commit_mono
-  run_step "Install Webi" bootstrap_install_webi
-  run_step "Source envman (current shell)" bootstrap_source_envman
-  run_step "Source envman persistently" bootstrap_source_envman_persistent
+  run_step "Setup directories" setup_directories
+  run_step "Add local bin directories to PATH" setup_path_env
+  run_step "Install Commit Mono font" install_font_commit_mono
+  run_step "Install Webi" install_webi
+  run_step "Source envman (current shell)" setup_envman_current
+  run_step "Source envman persistently" setup_envman_persistent
 
   run_step "Install Zig (Webi)" "webi_install ziglang"
   run_step "Install Rust (Webi)" "webi_install rust"
@@ -399,7 +413,7 @@ main() {
   run_step "Build ZLS from source" build_zls_from_source
   run_step "Install zigup" install_zigup
   run_step "Build Ghostty from source" build_ghostty_from_source
-
+  run_step "Install and apply chezmoi dotfiles" install_chezmoi_dotfiles
 
   log_info "System ready."
 }
