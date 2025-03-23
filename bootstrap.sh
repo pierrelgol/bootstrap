@@ -201,6 +201,43 @@ build_helix_from_source() {
   log_info "HELIX_RUNTIME should point to $bin_dir/helix/runtime"
 
   export HELIX_RUNTIME="$bin_dir/helix/runtime"
+  cd "$repo_dir"
+}
+
+
+build_zls_from_source() {
+  local repo_dir="$HOME/local/repo"
+  local bin_dir="$HOME/local/bin"
+  local zls_dir="$repo_dir/zls"
+
+  if command -v zls &>/dev/null; then
+    log_success "zls already installed"
+    return
+  fi
+
+  local zig_version
+  zig_version=$(zig version)
+  if [[ ! "$zig_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+    log_error "Could not detect valid Zig version (got: $zig_version)"
+    return 1
+  fi
+
+  log_info "Cloning ZLS and checking out tag v$zig_version"
+
+  mkdir -p "$repo_dir"
+  git clone https://github.com/zigtools/zls.git "$zls_dir"
+  cd "$zls_dir"
+
+  if git rev-parse "v$zig_version" >/dev/null 2>&1; then
+    git checkout "v$zig_version"
+  else
+    log_error "No ZLS tag found for Zig v$zig_version. Staying on default branch."
+  fi
+
+  zig build -Doptimize=ReleaseSafe -p "$HOME/local"
+
+  log_success "ZLS built and installed to $bin_dir"
+  cd "$repo_dir"
 }
 
 
@@ -227,6 +264,8 @@ main() {
 
   run_step "Build yazi from source" build_yazi_from_source
   run_step "Build helix from source" build_helix_from_source
+
+  run_step "Build ZLS from source" build_zls_from_source
 
   log_info "System ready."
 }
