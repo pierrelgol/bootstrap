@@ -1,6 +1,29 @@
 #!/bin/bash
 set -euo pipefail
 
+
+INTERACTIVE_MODE=true
+run_step() {
+  local step_name="$1"
+  local step_func="$2"
+
+  if [ "$INTERACTIVE_MODE" = false ]; then
+    $step_func
+    return
+  fi
+
+  while true; do
+    echo -e "\n\033[1;36m==>\033[0m Run step '\033[1m$step_name\033[0m'? [Y/n/s] "
+    read -r choice
+    case "$choice" in
+      [Yy]|"") $step_func && break ;;
+      [Nn]) log_info "Skipped step: $step_name" && break ;;
+      [Ss]) INTERACTIVE_MODE=false && log_info "Skipping prompts from now on..." && $step_func && break ;;
+      *) echo "Please enter Y, n, or s." ;;
+    esac
+  done
+}
+
 log_info() {
   echo -e "\033[1;34m==>\033[0m $1"
 }
@@ -178,22 +201,25 @@ build_helix_from_source() {
 
 main() {
   log_info "Starting bootstrap..."
-  bootstrap_setup_directories
-  bootstrap_install_font_commit_mono
-  bootstrap_install_webi
-  bootstrap_source_envman
-  bootstrap_source_envman_persistent
-  webi_install ziglang
-  webi_install rust
-  source_rust_env
-  cargo_install bat
-  cargo_install eza
-  cargo_install zoxide
-  cargo_install atuin
-  cargo_install ripgrep
-  build_yazi_from_source
-  build_helix_from_source
+
+  run_step "Setup directories" bootstrap_setup_directories
+  run_step "Install Commit Mono font" bootstrap_install_font_commit_mono
+  run_step "Install Webi" bootstrap_install_webi
+  run_step "Source envman (current shell)" bootstrap_source_envman
+  run_step "Source envman persistently" bootstrap_source_envman_persistent
+
+  run_step "Install Zig (Webi)" "webi_install ziglang"
+  run_step "Install Rust (Webi)" "webi_install rust"
+  run_step "Source Rust env" source_rust_env
+
+  run_step "Install bat" "cargo_install bat"
+  run_step "Install eza" "cargo_install eza"
+  run_step "Install zoxide" "cargo_install zoxide"
+  run_step "Install atuin" "cargo_install atuin"
+  run_step "Install ripgrep" "cargo_install ripgrep"
+
+  run_step "Build yazi from source" build_yazi_from_source
+  run_step "Build helix from source" build_helix_from_source
+
   log_info "System ready."
 }
-
-main
