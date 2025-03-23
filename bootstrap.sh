@@ -223,3 +223,5 @@ main() {
 
   log_info "System ready."
 }
+
+main
