@@ -397,12 +397,14 @@ main() {
   run_step "Source envman (current shell)" setup_envman_current
   run_step "Source envman persistently" setup_envman_persistent
 
+  run_step "Install Brew (Webi)" "webi_install brew"
   run_step "Install Zig (Webi)" "webi_install ziglang"
+  run_step "Install Rust (Webi)" "webi_install golang@stable"
   run_step "Install Rust (Webi)" "webi_install rust"
   run_step "Source Rust env" source_rust_env
+  run_step "Source envman (current shell)" setup_envman_current
+  run_step "Source envman persistently" setup_envman_persistent
 
-  run_step "Install bat" "cargo_install bat"
-  run_step "Install eza" "cargo_install eza"
   run_step "Install zoxide" "cargo_install zoxide"
   run_step "Install atuin" "cargo_install atuin"
   run_step "Install ripgrep" "cargo_install ripgrep"
