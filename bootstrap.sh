@@ -168,12 +168,14 @@ setup_envman_persistent() {
 
 webi_install() {
   local tool="$1"
+  setup_envman_current
   if command -v "$tool" &>/dev/null; then
     log_success "$tool already installed"
   else
     log_info "Installing $tool via Webi..."
     webi "$tool"
     log_success "$tool installed"
+    setup_envman_current
   fi
 }
 
