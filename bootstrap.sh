@@ -1,6 +1,32 @@
 #!/bin/bash
 set -euo pipefail
 
+setup_ssh_keys() {
+  log_info "Setting up SSH keys..."
+  mkdir -p "$HOME/.ssh"
+
+  for keyname in github school; do
+    local keypath="$HOME/.ssh/$keyname"
+    if [ ! -f "$keypath" ]; then
+      ssh-keygen -t ed25519 -f "$keypath" -N "" -C "$keyname"
+      log_success "SSH key generated: $keyname"
+    else
+      log_success "SSH key already exists: $keyname"
+    fi
+  done
+
+  echo -e "\n\033[1;34m==>\033[0m Public keys:\n"
+  cat "$HOME/.ssh/github.pub"
+  echo
+  cat "$HOME/.ssh/school.pub"
+  echo -e "\n\033[1;34m==>\033[0m Add these keys to their respective platforms, then press ENTER to continue..."
+  read -r
+
+  ssh-add "$HOME/.ssh/github"
+  ssh-add "$HOME/.ssh/school"
+  log_success "SSH keys added to ssh-agent"
+}
+
 install_system_packages() {
   log_info "Installing system development packages..."
 
@@ -135,15 +161,6 @@ install_font_commit_mono() {
   log_success "Commit Mono Nerd Font installed"
 }
 
-install_webi() {
-  if [ ! -f "$HOME/.local/bin/webi" ]; then
-    log_info "Installing Webi..."
-    curl -sS https://webi.sh/webi | sh
-  else
-    log_success "Webi already installed"
-  fi
-}
-
 setup_envman_current() {
   local env_file="$HOME/.config/envman/PATH.env"
   if [ -f "$env_file" ]; then
@@ -154,6 +171,17 @@ setup_envman_current() {
     exit 1
   fi
 }
+
+install_webi() {
+  if [ ! -f "$HOME/.local/bin/webi" ]; then
+    log_info "Installing Webi..."
+    curl -sS https://webi.sh/webi | sh
+    setup_envman_current
+  else
+    log_success "Webi already installed"
+  fi
+}
+
 
 setup_envman_persistent() {
   local env_file="$HOME/.config/envman/PATH.env"
@@ -396,21 +424,18 @@ main() {
   run_step "Setup directories" setup_directories
   run_step "Add local bin directories to PATH" setup_path_env
   run_step "Install Commit Mono font" install_font_commit_mono
+  run_step "Setup SSH keys" setup_ssh_keys
   run_step "Install Webi" install_webi
   run_step "Source envman (current shell)" setup_envman_current
   run_step "Source envman persistently" setup_envman_persistent
 
   run_step "Install Brew (Webi)" "webi_install brew"
-  run_step "Install Zig (Webi)" "webi_install ziglang"
-  run_step "Install Rust (Webi)" "webi_install golang@stable"
+  run_step "Install Zig  (Webi)" "webi_install ziglang"
+  run_step "Install Go   (Webi)" "webi_install golang@stable"
   run_step "Install Rust (Webi)" "webi_install rust"
   run_step "Source Rust env" source_rust_env
   run_step "Source envman (current shell)" setup_envman_current
   run_step "Source envman persistently" setup_envman_persistent
-
-  run_step "Install zoxide" "cargo_install zoxide"
-  run_step "Install atuin" "cargo_install atuin"
-  run_step "Install ripgrep" "cargo_install ripgrep"
 
   run_step "Build yazi from source" build_yazi_from_source
   run_step "Build helix from source" build_helix_from_source
