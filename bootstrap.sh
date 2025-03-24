@@ -41,6 +41,7 @@ install_system_packages() {
 }
 
 INTERACTIVE_MODE=true
+
 run_step() {
   local step_name="$1"
   local step_func="$2"
