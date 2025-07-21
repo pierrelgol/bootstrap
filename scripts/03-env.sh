@@ -11,7 +11,7 @@ mkdir -p \
   "$HOME/local/bin" \
   "$HOME/local/repo" \
   "$HOME/workspace" \
-  "$HOME/.local/bin" \
+  "$HOME/.local/bin"
 ok "Created local dirs"
 
 # === Dotfiles ===
@@ -26,11 +26,23 @@ else
   git clone --depth 1 "$DOTFILES_REPO" "$DOTFILES_DIR"
 fi
 
+# === Backup conflicting files ===
+log "Checking for conflicting files..."
+cd "$HOME"
+for file in .bashrc .profile .bash_profile .zshrc; do
+  if [ -f "$file" ] && [ ! -L "$file" ]; then
+    mv "$file" "$file.backup"
+    log "Backed up $file → $file.backup"
+  fi
+done
+
+# === Stow dotfiles ===
 cd "$DOTFILES_DIR"
 log "Stowing dotfiles..."
 stow */
 ok "Dotfiles applied with stow"
 
+# === Update PATH ===
 BASHRC="$HOME/.bashrc"
 paths=(
   "$HOME/local/bin"
@@ -49,4 +61,3 @@ for dir in "${paths[@]}"; do
 done
 
 ok "PATH updated and persistent"
-
