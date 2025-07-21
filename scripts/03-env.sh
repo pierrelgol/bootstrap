@@ -15,7 +15,7 @@ mkdir -p \
 ok "Created local dirs"
 
 # === Dotfiles ===
-DOTFILES_REPO="https://github.com/pierrelgol/dotfiles"
+DOTFILES_REPO="git@github.com:pierrelgol/dotfiles.git"
 DOTFILES_DIR="$HOME/.dotfiles"
 
 if [ -d "$DOTFILES_DIR" ]; then
