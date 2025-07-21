@@ -62,7 +62,4 @@ else
   else
     log "No exact ZLS tag for $zig_version — using default branch"
   fi
-
-  zig build -Doptimize=ReleaseFast -p "$HOME/local"
-  ok "ZLS built and installed"
 fi
