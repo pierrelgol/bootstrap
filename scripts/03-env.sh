@@ -39,7 +39,7 @@ done
 # === Stow dotfiles ===
 cd "$DOTFILES_DIR"
 log "Stowing dotfiles..."
-stow */
+stow --adopt */
 ok "Dotfiles applied with stow"
 
 # === Update PATH ===
