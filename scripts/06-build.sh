@@ -10,6 +10,7 @@ BIN_DIR="$HOME/local/bin"
 mkdir -p "$REPO_DIR" "$BIN_DIR"
 
 [ -f "$HOME/.cargo/env" ] && source "$HOME/.cargo/env"
+[ -f "$HOME/.config/envman/PATH.env" ] && source "$HOME/.config/envman/PATH.env"
 
 # === Build yazi ===
 YAZI_DIR="$REPO_DIR/yazi"
@@ -17,7 +18,7 @@ if command -v yazi &>/dev/null; then
   ok "yazi already installed"
 else
   log "Cloning and building yazi..."
-  git clone --depth 1 https://github.com/sxyazi/yazi "$YAZI_DIR"
+  [ -d "$YAZI_DIR" ] || git clone --depth 1 https://github.com/sxyazi/yazi "$YAZI_DIR"
   cd "$YAZI_DIR"
   cargo build --release --locked
   cp target/release/yazi "$BIN_DIR"
@@ -31,7 +32,7 @@ if command -v hx &>/dev/null; then
   ok "helix (hx) already installed"
 else
   log "Cloning and building helix..."
-  git clone --depth 1 https://github.com/helix-editor/helix "$HELIX_DIR"
+  [ -d "$HELIX_DIR" ] || git clone --depth 1 https://github.com/helix-editor/helix "$HELIX_DIR"
   cd "$HELIX_DIR"
   cargo install --path helix-term --locked
   cp "$HOME/.cargo/bin/hx" "$BIN_DIR/hx"
@@ -53,7 +54,7 @@ else
   fi
 
   log "Cloning and building ZLS for Zig $zig_version..."
-  git clone https://github.com/zigtools/zls "$ZLS_DIR"
+  [ -d "$ZLS_DIR" ] || git clone https://github.com/zigtools/zls "$ZLS_DIR"
   cd "$ZLS_DIR"
 
   if git rev-parse "$zig_version" &>/dev/null; then
@@ -65,4 +66,3 @@ else
   zig build -Doptimize=ReleaseFast -p "$HOME/local"
   ok "ZLS built and installed"
 fi
-
